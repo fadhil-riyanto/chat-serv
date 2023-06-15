@@ -8,33 +8,43 @@
 #include <stdio.h>
 #include <unistd.h>
 
-struct cmd_data {
-    int         port;
-    char        *addr;
-};
 
-int _cmd_interface(int argc, char **argv, parse_cmd *parse_cmd) {
+
+int _cmd_interface(int argc, char **argv, parse_cmd *parse_cmd, 
+                    cmd_data *cmd_data)
+{
     
     int ret;
-    char *buf;
+    char *port, *addr;
+    
+    parse_cmd->get("addr", &addr);
+    if (parse_cmd->get("addr", &addr) == EINCOMPLETEARG ||            \
+        parse_cmd->get("addr", &addr) == ENULL)
+        goto fail;
+    cmd_data->addr = addr;
 
-    if (parse_cmd->get("port", &buf) == EINCOMPLETEARG)
-    {
-        printf("please use ./%s --port portnumber --addr ipv4addr\n", )
-    }
+    if (parse_cmd->get("port", &port) == EINCOMPLETEARG ||              \
+        parse_cmd->get("port", &port) == ENULL)
+        goto fail;
+    
+    cmd_data->port = atoi(port);
 
-    fprintf(stdout, "%s\n", buf);
-
+    fprintf(stdout, "listening on %s:%d\n", 
+            cmd_data->addr, cmd_data->port);
     return 0;
+fail:
+    printf("please use ./%s --port portnumber --addr ipv4addr\n", argv[0]);
+    return -1;
 
 }
 
 int main(int argc, char **argv)
 {
+    struct cmd_data cmd_data;
     parse_cmd parse_cmd(argc, argv);
-    return _main(&parse_cmd);
+    return _cmd_interface(argc, argv, &parse_cmd, &cmd_data);
 
 
     //fprintf(stdout, "%s\n", buf);
-    return 0;
+    // return 0;
 }

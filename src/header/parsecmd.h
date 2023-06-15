@@ -2,6 +2,11 @@
 #define PARSECMD_H
 #include <cstddef>
 
+struct cmd_data {
+    int         port;
+    char        *addr;
+};
+
 class parse_cmd {
     private:
     int argc;

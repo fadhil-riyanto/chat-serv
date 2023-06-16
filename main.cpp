@@ -7,18 +7,24 @@
 #include <cstdlib>
 #include <stdio.h>
 #include <unistd.h>
+#include "src/header/server.h"
 
-
+int _main(struct cmd_data *cmd_data)
+{
+    sock socket(cmd_data);
+    return socket.start();
+    
+}
 
 int _cmd_interface(int argc, char **argv, parse_cmd *parse_cmd, 
-                    cmd_data *cmd_data)
+                    struct cmd_data *cmd_data)
 {
     
     int ret;
     char *port, *addr;
     
     parse_cmd->get("addr", &addr);
-    if (parse_cmd->get("addr", &addr) == EINCOMPLETEARG ||            \
+    if (parse_cmd->get("addr", &addr) == EINCOMPLETEARG ||              \
         parse_cmd->get("addr", &addr) == ENULL)
         goto fail;
     cmd_data->addr = addr;
@@ -31,6 +37,7 @@ int _cmd_interface(int argc, char **argv, parse_cmd *parse_cmd,
 
     fprintf(stdout, "listening on %s:%d\n", 
             cmd_data->addr, cmd_data->port);
+    _main(cmd_data);
     return 0;
 fail:
     printf("please use ./%s --port portnumber --addr ipv4addr\n", argv[0]);

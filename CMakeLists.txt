@@ -6,6 +6,7 @@ set(CMAKE_BUILD_TYPE, Debug)
 SET(soure_library
     src/parsecmd.cpp
     src/server.cpp
+    src/error.cpp
 )
 
 ADD_LIBRARY(libchat-serv STATIC "${soure_library}")

@@ -1,0 +1,4 @@
+struct mainthread_data 
+{
+
+};

@@ -18,6 +18,8 @@ class sock
     int sock_create_fd();
     int sock_bind();
     int sock_listen();
+    int setup_epoll();
+    void on_accept(void (*f) (struct mainthread_data *mainthread_data));
 
     public:
     sock(struct cmd_data *cmd_data);

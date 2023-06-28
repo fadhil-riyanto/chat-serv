@@ -19,7 +19,8 @@ class sock
     int sock_bind();
     int sock_listen();
     int setup_epoll();
-    void on_accept(void (*f) (struct mainthread_data *mainthread_data));
+    void on_accept();
+    static void* goto_backend(void *arg);
 
     public:
     sock(struct cmd_data *cmd_data);

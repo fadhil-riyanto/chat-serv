@@ -1,5 +1,7 @@
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#include <cstddef>
+#include <cstdlib>
 #endif
 
 #include "header/server.h"
@@ -13,8 +15,15 @@
 #include <unistd.h>
 #include "header/data.h"
 #include <sys/socket.h>
+#include <pthread.h>
 
 #define LISTEN_BACKLOG 50
+
+typedef struct pthread_arg_t
+{
+    int                 sockfd;
+    struct sockaddr_in  clientaddr;
+} pthread_arg_t;
 
 sock::sock(struct cmd_data *cmd_data)
 {
@@ -63,18 +72,72 @@ onerr:
     return ret;
 }
 
-void sock::on_accept(void (*f) (struct mainthread_data *mainthread_data) )
+void* sock::goto_backend(void *arg)
+{
+    pthread_arg_t *pthread_arg = (pthread_arg_t*)arg;
+    
+    const char *buf = (char*)"oke\n";
+    size_t buflen = sizeof(buf); 
+    //send(pthread_arg->sockfd, buf, buflen, MSG_DONTWAIT);
+    write(pthread_arg->sockfd, buf, strlen(buf));
+    close(pthread_arg->sockfd);
+
+    // printf("%s", "wokr");
+    return 0;
+}
+
+void sock::on_accept()
 {
     int client = -1;
+    int thread_return;
     struct sockaddr_in client_name;
     socklen_t client_name_len = sizeof(client_name);
+
+    pthread_attr_t pthread_attr;
+    pthread_arg_t *pthread_arg;
+    pthread_t new_thread;
+
+    pthread_arg = (pthread_arg_t*)malloc(sizeof(*pthread_arg));
+    
+    if(pthread_attr_init(&pthread_attr) != 0)
+    {
+        show_error_code(errno,  (char*)"pthread attr init");
+        free(pthread_arg);
+        close(this->server_state->fd);
+        exit(-errno);
+    }
+
+    if(pthread_attr_setdetachstate(&pthread_attr, PTHREAD_CREATE_DETACHED) != 0)
+    {
+        show_error_code(errno,  (char*)"pthread attr set detachstate");
+        free(pthread_arg);
+        close(this->server_state->fd);
+        exit(-errno);
+    }
 
     while(1)
     {
         client = accept(this->server_state->fd, (struct sockaddr*)&client_name, 
             &client_name_len);
+        if (client == -1)
+        {
+            show_error_code(errno, (char*)"accept");
+            goto accept_err;
+        }
 
+        pthread_arg->sockfd = client;
+        pthread_arg->clientaddr = client_name;
+
+
+
+
+        thread_return = pthread_create(&new_thread, &pthread_attr, sock::goto_backend, (void*)pthread_arg);
+
+        if thread_return == 
     }
+
+accept_err:
+    close(this->server_state->fd);
 }
 
 int sock::start()
@@ -91,20 +154,14 @@ int sock::start()
         perror("sock::sock_bind() on bind()");
         return errno;
     }
-    //this->sock_bind();
-    //show_error_code(errno, "bind");
-
-    // if ((ret = this->sock_listen()) <= 0)
-    // {
-    //     perror("sock::sock_listen() on listen()");
-    //     return errno;
-    // }
-    
-
-    printf("data %d\n", this->sock_listen());
-    while(1)
+    if ((ret = this->sock_listen()) < 0)
     {
-        
+        perror("sock::sock_listen() ons listen()");
+     
     }
+    
+    
+    this->on_accept();
+    
     return 0;
 }
